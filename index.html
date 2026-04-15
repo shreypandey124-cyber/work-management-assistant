@@ -21,17 +21,20 @@
                 <p class="tagline">Enterprise Workforce Planning System</p>
             </div>
             <div class="header-actions">
-                <button class="btn btn-secondary" id="api-settings">
+                <button class="btn btn-secondary" id="api-settings" title="Configure AI settings">
                     <i class="ph ph-robot"></i> AI Settings
                 </button>
-                <button class="btn btn-secondary" id="backup-data">
+                <button class="btn btn-secondary" id="help-tutorial" title="View help tutorial">
+                    <i class="ph ph-question"></i> Help
+                </button>
+                <button class="btn btn-secondary" id="backup-data" title="Export data to file">
                     <i class="ph ph-download-simple"></i> Export
                 </button>
-                <button class="btn btn-secondary" id="restore-trigger">
+                <button class="btn btn-secondary" id="restore-trigger" title="Import from file">
                     <i class="ph ph-upload-simple"></i> Import
                 </button>
                 <input type="file" id="restore-data" accept=".json" hidden>
-                <button class="btn btn-primary" id="open-add-person">
+                <button class="btn btn-primary" id="open-add-person" title="Add new team member">
                     <i class="ph ph-plus"></i> Add Member
                 </button>
             </div>
@@ -72,11 +75,11 @@
         <!-- Search -->
         <div class="search">
             <i class="ph ph-magnifying-glass"></i>
-            <input type="text" id="global-search" placeholder="Search team members by name, skill, or trait...">
+            <input type="text" id="global-search" placeholder="Search team members by name, skill, or trait (e.g., 'JavaScript' or 'Reliable')..." aria-label="Search team members">
         </div>
 
         <!-- Insights -->
-        <div id="manager-insights" class="insights"></div>
+        <div id="manager-insights" class="insights" role="status" aria-live="polite"></div>
 
         <!-- Main Content -->
         <main class="main">
@@ -86,39 +89,40 @@
                     <h2><i class="ph ph-users"></i> Team</h2>
                     <span class="badge" id="people-count">0 Members</span>
                 </div>
-                <div id="people-grid" class="team-grid"></div>
+                <div id="people-grid" class="team-grid" role="list" aria-label="Team members"></div>
             </section>
 
             <!-- Task Panel -->
-            <aside class="task-panel">
+            <aside class="task-panel" role="complementary" aria-label="Task management">
                 <!-- New Task -->
                 <div class="panel">
                     <h3><i class="ph ph-plus-circle"></i> New Task</h3>
-                    <form id="task-form">
+                    <form id="task-form" aria-label="Create new task">
                         <div class="form-group">
-                            <label>Task Description *</label>
-                            <textarea id="task-desc" rows="2" placeholder="Describe the task or project..." required></textarea>
+                            <label for="task-desc">Task Description *</label>
+                            <textarea id="task-desc" rows="2" placeholder="Describe the task or project in detail..." required aria-required="true"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Required Skills *</label>
-                            <input type="text" id="task-skills" placeholder="e.g. JavaScript, Design, SQL (comma separated)" required>
+                            <label for="task-skills">Required Skills *</label>
+                            <input type="text" id="task-skills" placeholder="e.g., JavaScript, Design, SQL (comma separated)" required aria-required="true">
                         </div>
                         <div class="form-group">
-                            <label>Avoid Traits</label>
-                            <input type="text" id="task-avoid-traits" placeholder="e.g. Slow, Unreliable (traits to avoid)">
+                            <label for="task-avoid-traits">Traits to Avoid</label>
+                            <input type="text" id="task-avoid-traits" placeholder="e.g., Slow, Unreliable, Procrastinator (negative traits)">
                         </div>
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Estimated Hours *</label>
-                                <input type="number" id="task-est-hours" min="1" value="8" required>
+                                <label for="task-est-hours">Estimated Hours *</label>
+                                <input type="number" id="task-est-hours" min="1" max="480" value="8" required aria-required="true" aria-describedby="hours-hint">
+                                <span id="hours-hint" class="field-hint">Max 480h (60h/week for 8 weeks)</span>
                             </div>
                             <div class="form-group">
-                                <label>Due Date *</label>
-                                <input type="date" id="task-due-date" required>
+                                <label for="task-due-date">Due Date *</label>
+                                <input type="date" id="task-due-date" required aria-required="true">
                             </div>
                         </div>
                         <div class="form-group">
-                            <label>Priority</label>
+                            <label for="task-priority">Priority</label>
                             <select id="task-priority">
                                 <option value="low">Low</option>
                                 <option value="medium" selected>Medium</option>
@@ -129,11 +133,11 @@
                             <i class="ph ph-magic-wand"></i> Get Suggestions
                         </button>
                     </form>
-                    <div id="suggestion-container"></div>
+                    <div id="suggestion-container" role="region" aria-label="Task assignment suggestions"></div>
                 </div>
 
                 <!-- Notifications -->
-                <div id="notification-section" class="panel notification" style="display: none;">
+                <div id="notification-section" class="panel notification" style="display: none;" role="alert" aria-live="assertive">
                     <h3><i class="ph ph-warning-circle"></i> Needs Attention <span class="badge danger" id="notif-count">0</span></h3>
                     <div id="reassignment-list"></div>
                 </div>
@@ -141,50 +145,57 @@
                 <!-- Tasks -->
                 <div class="panel">
                     <h3><i class="ph ph-clipboard-text"></i> Active Tasks</h3>
-                    <div id="task-history" class="task-list"></div>
+                    <div id="task-history" class="task-list" role="list" aria-label="Active tasks"></div>
                 </div>
             </aside>
         </main>
+
+        <!-- Keyboard Shortcuts Hint -->
+        <footer class="keyboard-hints" aria-label="Keyboard shortcuts">
+            <span><kbd>Esc</kbd> Close modal</span>
+            <span><kbd>Ctrl</kbd>+<kbd>N</kbd> New member</span>
+            <span><kbd>Ctrl</kbd>+<kbd>S</kbd> Export data</span>
+        </footer>
     </div>
 
     <!-- Person Modal -->
-    <div id="person-modal" class="modal">
+    <div id="person-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="modal-content">
             <h2 id="modal-title">Add Team Member</h2>
-            <form id="person-form">
+            <form id="person-form" aria-label="Team member form">
                 <input type="hidden" id="person-id">
                 <div class="form-group">
-                    <label>Full Name *</label>
-                    <input type="text" id="p-name" required>
+                    <label for="p-name">Full Name *</label>
+                    <input type="text" id="p-name" required aria-required="true" placeholder="Enter full name">
                 </div>
                 <div class="form-group">
-                    <label>Skills *</label>
-                    <input type="text" id="p-skills" placeholder="e.g. JavaScript, Python, Design (comma separated)" required>
+                    <label for="p-skills">Skills *</label>
+                    <input type="text" id="p-skills" placeholder="e.g., JavaScript, Python, Design (comma separated)" required aria-required="true">
                 </div>
                 <div class="form-group">
-                    <label>Traits (Positive & Negative)</label>
-                    <input type="text" id="p-traits" placeholder="e.g. Creative, Reliable, Slow (comma separated)">
-                    <div class="trait-chips">
-                        <span class="trait-chip" onclick="addTrait('Creative')">Creative</span>
-                        <span class="trait-chip" onclick="addTrait('Analytical')">Analytical</span>
-                        <span class="trait-chip" onclick="addTrait('Fast Learner')">Fast Learner</span>
-                        <span class="trait-chip" onclick="addTrait('Reliable')">Reliable</span>
-                        <span class="trait-chip" onclick="addTrait('Team Player')">Team Player</span>
-                        <span class="trait-chip" onclick="addTrait('Leader')">Leader</span>
-                        <span class="trait-chip negative" onclick="addTrait('Slow')">Slow</span>
-                        <span class="trait-chip negative" onclick="addTrait('Unreliable')">Unreliable</span>
-                        <span class="trait-chip negative" onclick="addTrait('Procrastinator')">Procrastinator</span>
-                        <span class="trait-chip negative" onclick="addTrait('Easily Distracted')">Easily Distracted</span>
+                    <label for="p-traits">Traits (Positive &amp; Negative)</label>
+                    <input type="text" id="p-traits" placeholder="e.g., Creative, Reliable, Slow (comma separated)">
+                    <div class="trait-chips" role="listbox" aria-label="Quick trait selection">
+                        <span class="trait-chip" onclick="addTrait('Creative')" role="option" tabindex="0">Creative</span>
+                        <span class="trait-chip" onclick="addTrait('Analytical')" role="option" tabindex="0">Analytical</span>
+                        <span class="trait-chip" onclick="addTrait('Fast Learner')" role="option" tabindex="0">Fast Learner</span>
+                        <span class="trait-chip" onclick="addTrait('Reliable')" role="option" tabindex="0">Reliable</span>
+                        <span class="trait-chip" onclick="addTrait('Team Player')" role="option" tabindex="0">Team Player</span>
+                        <span class="trait-chip" onclick="addTrait('Leader')" role="option" tabindex="0">Leader</span>
+                        <span class="trait-chip negative" onclick="addTrait('Slow')" role="option" tabindex="0">Slow</span>
+                        <span class="trait-chip negative" onclick="addTrait('Unreliable')" role="option" tabindex="0">Unreliable</span>
+                        <span class="trait-chip negative" onclick="addTrait('Procrastinator')" role="option" tabindex="0">Procrastinator</span>
+                        <span class="trait-chip negative" onclick="addTrait('Easily Distracted')" role="option" tabindex="0">Easily Distracted</span>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Efficiency (0.1-2.0)</label>
-                        <input type="number" id="p-efficiency" step="0.1" min="0.1" max="2" value="1" required>
+                        <label for="p-efficiency">Efficiency (0.1-2.0)</label>
+                        <input type="number" id="p-efficiency" step="0.1" min="0.1" max="2" value="1" required aria-required="true">
                     </div>
                     <div class="form-group">
-                        <label>Weekly Capacity</label>
-                        <select id="p-capacity" required>
+                        <label for="p-capacity">Weekly Capacity</label>
+                        <select id="p-capacity" required aria-required="true">
                             <option value="10">10h</option>
                             <option value="20">20h</option>
                             <option value="30">30h</option>
@@ -195,8 +206,8 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Monthly Capacity</label>
-                    <select id="p-monthly-capacity" required>
+                    <label for="p-monthly-capacity">Monthly Capacity</label>
+                    <select id="p-monthly-capacity" required aria-required="true">
                         <option value="40">40h</option>
                         <option value="80">80h</option>
                         <option value="120">120h</option>
@@ -206,7 +217,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Status Override</label>
+                        <label for="p-status-override">Status Override</label>
                         <select id="p-status-override">
                             <option value="auto">Auto (Normal)</option>
                             <option value="available">Force Available</option>
@@ -215,7 +226,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Private Notes</label>
+                        <label for="p-notes">Private Notes</label>
                         <input type="text" id="p-notes" placeholder="Notes visible only to you...">
                     </div>
                 </div>
@@ -228,17 +239,17 @@
     </div>
 
     <!-- API Modal -->
-    <div id="api-modal" class="modal">
+    <div id="api-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="api-modal-title">
         <div class="modal-content">
-            <h2>AI Settings</h2>
-            <p class="modal-desc">Configure AI-powered task recommendations</p>
-            <form id="api-form">
+            <h2 id="api-modal-title">AI Settings</h2>
+            <p class="modal-desc">Configure AI-powered task recommendations using OpenRouter API</p>
+            <form id="api-form" aria-label="API configuration form">
                 <div class="form-group">
-                    <label>API Key</label>
-                    <input type="password" id="api-key" placeholder="sk-...">
+                    <label for="api-key">API Key</label>
+                    <input type="password" id="api-key" placeholder="sk-... (from openrouter.ai)">
                 </div>
                 <div class="form-group">
-                    <label>Model</label>
+                    <label for="api-model">Model</label>
                     <select id="api-model">
                         <option value="anthropic/claude-opus-4.6-20251114">Claude Opus 4.6</option>
                         <option value="anthropic/claude-sonnet-4-20250514">Claude Sonnet 4</option>
@@ -253,9 +264,9 @@
     </div>
 
     <!-- Tutorial Modal -->
-    <div id="tutorial-modal" class="modal">
-        <div class="modal-content tutorial">
-            <h2>Welcome to Work Management Assistant</h2>
+    <div id="tutorial-modal" class="modal tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorial-title">
+        <div class="modal-content">
+            <h2 id="tutorial-title">Welcome to Work Management Assistant</h2>
             <p class="tutorial-subtitle">Your professional workforce planning system</p>
             
             <div class="tutorial-steps">
@@ -263,28 +274,28 @@
                     <div class="step-number">1</div>
                     <div class="step-content">
                         <h3>Add Your Team</h3>
-                        <p>Click "Add Member" to add team members with their skills, capacity, and traits.</p>
+                        <p>Click "Add Member" to add team members with their skills, capacity, efficiency rating, and traits (positive or negative).</p>
                     </div>
                 </div>
                 <div class="tutorial-step">
                     <div class="step-number">2</div>
                     <div class="step-content">
                         <h3>Create Tasks</h3>
-                        <p>Describe tasks with required skills, hours, and due dates. The system will suggest the best people.</p>
+                        <p>Describe tasks with required skills, hours, and due dates. Specify traits to avoid for better matching. The system will suggest the best people.</p>
                     </div>
                 </div>
                 <div class="tutorial-step">
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3>Track Workload</h3>
-                        <p>Monitor team capacity and utilization. Get alerts for overloaded members.</p>
+                        <p>Monitor team capacity and utilization. Get alerts for overloaded members. View insights for workforce optimization.</p>
                     </div>
                 </div>
                 <div class="tutorial-step">
                     <div class="step-number">4</div>
                     <div class="step-content">
-                        <h3>Export & Backup</h3>
-                        <p>Use Export/Import to backup your data. Your data stays local for privacy.</p>
+                        <h3>Export &amp; Backup</h3>
+                        <p>Use Export/Import to backup your data. Your data stays local in your browser for privacy. Click "Help" to replay this tutorial.</p>
                     </div>
                 </div>
             </div>
