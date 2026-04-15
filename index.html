@@ -13,7 +13,7 @@
         <header>
             <div>
                 <h1>Work Management Assistant</h1>
-                <p class="tagline">Optimize your team's potential with AI-driven task suggestions.</p>
+                <p class="tagline">Intelligent workforce planning and task allocation for team leaders.</p>
             </div>
             <div style="display: flex; gap: 0.75rem;">
                 <button type="button" class="btn btn-secondary" id="api-settings" title="API Settings">
@@ -32,8 +32,8 @@
             </div>
         </header>
         
-        <!-- NEW: Management Dashboard Bar -->
-        <section class="metrics-bar glass-card fade-in" style="margin-bottom: 2rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; background: rgba(129, 140, 248, 0.05);">
+        <!-- Management Dashboard Bar -->
+        <section class="metrics-bar glass-card fade-in">
             <div class="metric-item">
                 <div class="metric-label">Team Capacity</div>
                 <div class="metric-value" id="stat-total-capacity">0h</div>
@@ -52,11 +52,11 @@
             </div>
         </section>
 
-        <!-- NEW: Global Leader Search -->
-        <div class="search-matrix fade-in" style="margin-bottom: 2rem;">
+        <!-- Global Search -->
+        <div class="search-matrix fade-in">
             <div style="position: relative;">
-                <i class="ph ph-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
-                <input type="text" id="global-search" placeholder="Search team by name, trait, or skill (e.g. 'SQL' or 'Reliable')..." style="padding-left: 3rem; background: var(--bg-card); font-size: 1.1rem; border-radius: 30px;">
+                <i class="ph ph-magnifying-glass" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-dim);"></i>
+                <input type="text" id="global-search" placeholder="Search team by name, trait, or skill..." style="padding-left: 2.5rem; border-radius: 6px;">
             </div>
         </div>
 
@@ -124,7 +124,7 @@
                     </div>
                 </section>
 
-                <section id="notification-section" class="glass-card" style="display: none; border-color: rgba(248, 113, 113, 0.3);">
+                <section id="notification-section" class="glass-card notification-alert" style="display: none;">
                     <div class="section-header">
                         <h2 style="color: var(--danger); font-size: 1.1rem;">
                             <i class="ph ph-warning-circle"></i> Needs Reassignment
@@ -174,10 +174,13 @@
                     </div>
                 </div>
                 <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    </div>
                     <div class="form-group">
                         <label for="p-efficiency">Working Efficiency (0.1 - 2.0)</label>
                         <input type="number" id="p-efficiency" step="0.1" value="1.0" min="0.1" max="2.0" required>
                     </div>
+                </div>
+                <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="form-group">
                         <label for="p-capacity">Weekly Capacity (Hours)</label>
                         <select id="p-capacity" required>
@@ -187,6 +190,17 @@
                             <option value="40" selected>40 Hours</option>
                             <option value="50">50 Hours</option>
                             <option value="60">60 Hours</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="p-monthly-capacity">Monthly Capacity (Hours)</label>
+                        <select id="p-monthly-capacity" required>
+                            <option value="40">40 Hours</option>
+                            <option value="80">80 Hours</option>
+                            <option value="120">120 Hours</option>
+                            <option value="160" selected>160 Hours</option>
+                            <option value="200">200 Hours</option>
+                            <option value="240">240 Hours</option>
                         </select>
                     </div>
                 </div>

@@ -45,18 +45,26 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const parseCSV = (str) => str ? str.split(',').map(s => s.trim()).filter(s => s !== '') : [];
 
 const getTaskBurnRate = (task) => {
-    if (task.completed) return 0;
+    if (task.completed) return { weeklyHours: 0, monthlyHours: 0, totalHours: 0 };
     
-    const start = task.assignmentDate ? new Date(task.assignmentDate) : new Date(task.timestamp);
+    const start = task.assignmentDate ? new Date(task.assignmentDate) : (task.timestamp ? new Date(task.timestamp) : new Date());
     const end = task.dueDate ? new Date(task.dueDate) : new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
     
+    if (isNaN(start.getTime())) {
+        return { weeklyHours: 0, monthlyHours: 0, totalHours: 0 };
+    }
+    
+    // Exact Daily Spread Logic
     const diffTime = Math.max(0, end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const weeks = Math.max(1, diffDays / 7);
+    const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    const totalHours = parseFloat(task.hours) || 0;
+    
+    const dailyRate = totalHours / diffDays;
     
     return {
-        weeklyHours: (parseFloat(task.hours) || 0) / weeks,
-        totalHours: parseFloat(task.hours) || 0
+        weeklyHours: Math.min(totalHours, dailyRate * 7),
+        monthlyHours: Math.min(totalHours, dailyRate * 30),
+        totalHours: totalHours
     };
 };
 
@@ -69,8 +77,6 @@ const getAllocatedHours = (personId, mode = 'weekly') => {
         }, 0);
 };
 
-// --- Suggestion Engine ---
-// --- Suggestion Engine ---
 // --- Suggestion Engine ---
 const getSuggestions = (task) => {
     const requiredSkills = parseCSV(task.skills).map(s => s.toLowerCase());
@@ -148,9 +154,11 @@ const getSuggestions = (task) => {
         return { person, score: finalPercent, status, statusClass, allocated, capacity, remaining, override };
     });
 
+    // Always return all people sorted by score, so there's never a blank result.
+    // Managers can override the low score if necessary.
     return suggestions
-        .filter(s => s.score > 5)
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => b.score - a.score)
+        .slice(0, Math.max(3, state.people.length)); // Ensure we give options, typically top 3
 };
 
 const getClaudeSuggestions = async (task) => {
@@ -174,7 +182,7 @@ Respond with ONLY a JSON array of the top 3 candidates in this exact format:
 
 Important: Consider the duration of the task. If the deadline is weeks away, prioritize people with long-term monthly capacity, even if they are busy today.
 
-Only include people who have the required skills. Score out of 100.`;
+CRITICAL: ALWAYS provide exactly 3 candidates (unless there are fewer than 3 people total on the team). If no one perfectly matches the required skills or has capacity, STILL provide the top 3 least-bad fallback options so the manager always has a choice. Score them appropriately out of 100 based on how bad the fallback is.`;
 
     try {
         const response = await fetch(ANTHROPIC_API_URL, {
@@ -220,6 +228,7 @@ const openModal = (person = null) => {
         document.getElementById('p-traits').value = person.traits;
         document.getElementById('p-efficiency').value = person.efficiency;
         document.getElementById('p-capacity').value = person.capacity || 40;
+        document.getElementById('p-monthly-capacity').value = person.monthlyCapacity || (person.capacity * 4) || 160;
         document.getElementById('p-status-override').value = person.statusOverride || 'auto';
         document.getElementById('p-notes').value = person.notes || '';
     } else {
@@ -238,6 +247,21 @@ const openModal = (person = null) => {
 const closeModal = () => {
     personModal.style.display = 'none';
 };
+
+personModal.addEventListener('click', (e) => {
+    if (e.target === personModal) closeModal();
+});
+
+apiModal.addEventListener('click', (e) => {
+    if (e.target === apiModal) apiModal.style.display = 'none';
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (personModal.style.display === 'flex') closeModal();
+        if (apiModal.style.display === 'flex') apiModal.style.display = 'none';
+    }
+});
 
 const deletePerson = (id) => {
     // Removed confirm() for instant action as requested
@@ -326,7 +350,7 @@ const render = () => {
                 const weeklyAllocated = getAllocatedHours(p.id, 'weekly');
                 const monthlyAllocated = getAllocatedHours(p.id, 'monthly');
                 const capacity = parseFloat(p.capacity) || 40;
-                const monthlyCapacity = capacity * 4;
+                const monthlyCapacity = parseFloat(p.monthlyCapacity) || capacity * 4;
                 
                 const remainingWeekly = capacity - weeklyAllocated;
                 const workloadClass = remainingWeekly < 5 ? 'workload-high' : 'badge-workload';
@@ -419,13 +443,22 @@ const render = () => {
     if (pendingTasks.length > 0) {
         notifSection.style.display = 'block';
         notifCount.textContent = pendingTasks.length;
-        notifList.innerHTML = pendingTasks.map(t => `
-            <div class="reassignment-card fade-in">
-                <div style="font-weight: 600; font-size: 0.9rem;">Task: ${t.desc}</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0;">Needs owner (${t.hours} hrs)</div>
-                <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.3rem; font-size: 0.75rem; margin-top: 0.5rem;" onclick="event.stopPropagation(); window.reAssignTask('${taskId}')">
-                    Find New Owner
-                </button>
+        notifList.innerHTML = `<button type="button" class="btn btn-secondary" style="width: 100%; margin-bottom: 0.75rem; font-size: 0.75rem; padding: 0.4rem;" onclick="window.dismissAllReassignments()">
+            <i class="ph ph-trash"></i> Clear All Notifications
+        </button>` + pendingTasks.map(t => `
+            <div class="reassignment-card fade-in" data-task-id="${t.id}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">Task: ${t.desc}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-secondary); margin: 0.2rem 0;">Needs owner (${t.hours} hrs)</div>
+                        <button type="button" class="btn btn-primary" style="width: 100%; padding: 0.3rem; font-size: 0.75rem; margin-top: 0.5rem;" onclick="event.stopPropagation(); window.reAssignTask('${t.id}')">
+                            Find New Owner
+                        </button>
+                    </div>
+                    <button type="button" class="btn-danger btn-icon" style="margin-left: 0.5rem; flex-shrink: 0;" onclick="event.stopPropagation(); window.dismissReassignment('${t.id}')" title="Dismiss notification">
+                        <i class="ph ph-x"></i>
+                    </button>
+                </div>
             </div>
         `).join('');
     } else {
@@ -471,16 +504,17 @@ const renderInsights = () => {
         }
     });
     
-    // 2. Overdue Check
+    // 2. Detailed Overdue Settings (Task specific details)
     const today = new Date();
     const overdue = state.tasks.filter(t => t.dueDate && new Date(t.dueDate) < today && !t.completed);
-    if (overdue.length > 0) {
+    
+    overdue.forEach(t => {
         insights.push({
             type: 'warning',
-            msg: `<strong>Deadline Missed:</strong> ${overdue.length} assigned task(s) are past their due date.`,
+            msg: `<strong>Missed Deadline:</strong> "${t.desc}" assigned to ${t.assignedToName || 'Nobody'} was due on ${t.dueDate}.`,
             icon: 'ph-clock-countdown'
         });
-    }
+    });
     
     // 3. Resource Highlight
     if (state.people.length > 0) {
@@ -601,6 +635,7 @@ personForm.addEventListener('submit', (e) => {
         traits: document.getElementById('p-traits').value,
         efficiency: document.getElementById('p-efficiency').value,
         capacity: document.getElementById('p-capacity').value,
+        monthlyCapacity: document.getElementById('p-monthly-capacity').value,
         statusOverride: document.getElementById('p-status-override').value, // Manager Control
         notes: document.getElementById('p-notes').value // Manager Notes
     };
@@ -740,6 +775,16 @@ window.reAssignTask = (taskId) => {
 
     // Note: We don't delete the orphaned task yet. 
     // It will remain in 'Needs Reassignment' until a new owner is assigned.
+};
+
+window.dismissReassignment = (taskId) => {
+    state.tasks = state.tasks.filter(t => t.id !== taskId);
+    saveState();
+};
+
+window.dismissAllReassignments = () => {
+    state.tasks = state.tasks.filter(t => t.assignedToId !== null || t.completed);
+    saveState();
 };
 
 // --- API Settings ---
